@@ -379,7 +379,7 @@ prices_gs = [0.29]
 prices = [0.29]
 fits = [0.04]
 budgets = [2000000]
-out_path_gs = os.path.join(cwd, 'Outputs', '1. Baseline sensitivity', 'Grid Search')
+out_path_gs = os.path.join(cwd, 'Outputs', '1. Budget', 'Grid Search')
 
 for budget in budgets:
     fit_search(in_path, out_path, prices, re_level=0,
@@ -388,11 +388,10 @@ for budget in budgets:
               out_path=out_path_gs, re_level=0, 
               total_budget=budget)
 
-summary_path_1 = os.path.join(outFile_sum, '1. Baseline', 'Summary.xlsx')
-func.eval_summary(os.path.join(cwd, 'Outputs', '1. Baseline', 
+summary_path_1 = os.path.join(outFile_sum, '1. Budget', 'Summary.xlsx')
+func.eval_summary(os.path.join(cwd, 'Outputs', '1. Budget', 
                                'Grid Search', 'Output Files'),
                   max_fits = summary_path_1)
-
 
 # RE Sensitivity ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 in_path = os.path.join(cwd, 'Inputs', 'inputs_RE.xlsx')
@@ -411,7 +410,7 @@ for re_level in re_levels:
                total_budget=current_budget, search='re')
     multi_run(in_path=in_path, fits=fits, elec_prices=prices_gs, 
               out_path=out_path_gs, re_level=re_level, 
-              total_budget=budget, index='re')
+              total_budget=current_budget, index='re')
 
 summary_path_2_b = os.path.join(outFile_sum, '2. RE sensitivity', 'Summary.xlsx')
 
@@ -428,7 +427,7 @@ prices = np.arange(0, 0.41, 0.01)
 prices_gs = np.arange(0, 0.41, 0.01)
 fits = np.arange(0, 0.26, 0.01)
 
-out_path_gs = os.path.join(cwd, 'Outputs', '5. Prosumer percentage', 'Grid Search')
+out_path_gs = os.path.join(cwd, 'Outputs', '3. Prosumer percentage', 'Grid Search')
 
 # Current base cases:
 for pros_perc in pros_percs:
@@ -465,8 +464,8 @@ for i, pros_perc in enumerate(pros_percs):
               out_path=out_path_gs, total_budget=current_budgets[i], 
               pros_perc=pros_perc, index='pros')
 
-summary_path_5 = os.path.join(outFile_sum, '5. Prosumer percentage', 
+summary_path_5 = os.path.join(outFile_sum, '3. Prosumer percentage', 
                               'Summary.xlsx')
-func.eval_summary(os.path.join(cwd, 'Outputs', '5. Prosumer percentage', 
+func.eval_summary(os.path.join(cwd, 'Outputs', '3. Prosumer percentage', 
                                'Grid Search', 'Output Files'),
                   max_fits = summary_path_5, index='pros')
