@@ -1704,7 +1704,7 @@ def hs_comp(casePath):
     
 def inv_comp(casePath, outPaths):
     
-    sns.set(font_scale=1.3)
+    sns.set(font_scale=1.1)
     
     new_plots_folder = os.path.join(casePath, 'Investment comp.png')
     fig, ax = plt.subplots()
@@ -1724,18 +1724,46 @@ def inv_comp(casePath, outPaths):
     n_bars = len(pv_invs)
     bar_width = 0.8 / n_bars                
     
-    x = np.arange(n_groups)                 
+    x = np.arange(n_groups)            
     colors = ["#FFE797", "#FCB53B", "#B45253"]
     for i, (label, values) in enumerate(pv_invs.items()):
-        ax.bar(x + i * bar_width, values, width=bar_width, label=label,
-               color=colors[i])
-        
+        for j, val in enumerate(values):
+            xpos = x[j] + i * bar_width
+    
+            if val == 0:
+                ax.scatter(
+                    xpos, 
+                    0.03 * max(map(max, pv_invs.values())),
+                    marker='x',
+                    color=colors[i],
+                    s=80,
+                    linewidths=2,
+                    zorder=3
+                )
+            else:
+                ax.bar(
+                    xpos, val,
+                    width=bar_width,
+                    label=label, # if j == 0 else "",
+                    color=colors[i]
+                )
+                
+    for sep in x[:-1] + 0.75:
+        ax.axvline(
+            sep,
+            linestyle='--',
+            linewidth=1,
+            color='gray',
+            alpha=0.5,
+            zorder=0
+        )
+    
     ax.set_xticks(x + bar_width * (n_bars - 1) / 2)
     ax.set_xticklabels(x_labels)
     ax.set_ylabel('Added owned PV (kW)')
     ax.set_xlabel('Year')
     ax.legend(title='Renewable level', loc='upper center', 
-              bbox_to_anchor=(0.5, 1), ncol=4,
+              bbox_to_anchor=(0.5, 1), ncol=3,
               bbox_transform=fig.transFigure,
               frameon=False)
     plt.tight_layout()
@@ -1749,7 +1777,7 @@ def inv_comp(casePath, outPaths):
 cwd = os.getcwd()
 outFile = os.path.join(cwd, "Outputs")
 outFile_0 = os.path.join(outFile, '0. Current Case', 'Output_0_40.xlsx')
-
+'''
 # Current Case
 add_ret(outFile_0, multi=0)
 gen_year(outFile_0, multi=0)
@@ -1798,18 +1826,19 @@ for _, row in emFile_1.iterrows():
                                 f'Output_{fit}_{price}.xlsx')
     rep_day(outPath_day, 10, 1, 1)
 
-
+'''
 # RE sensitivity ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 outFile_2 = os.path.join(outFile, "2. RE sensitivity")
-
+'''
 fit_v_price(outFile_2)
 
 current_budget = 400000
 re_levels = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6]
 
 summaryPath_2_1 = os.path.join(outFile_2, 'Summary.xlsx')
+'''
 outFile_2_1 = os.path.join(outFile_2, 'Grid Search')
-    
+'''
 for re_level in re_levels:
     surp_heatmap(outFile_2_1, re_level, max_fits=summaryPath_2_1, lb = 0.25)
     
@@ -1817,6 +1846,7 @@ energy_sensitivity(outFile_2_1, 're', re_levels)
 capacity_sensitivity(outFile_2_1, 're', re_levels)
 re_comp(outFile_2_1, index='re', addCurrent=outFile_0)
 min_v_act_RE([outFile_2_1])
+'''
 endOutPaths = [os.path.join(outFile_2_1, "Output Files", re) 
                for re in ['40', '50', '60']]
 outNames = ["Output_11_35.xlsx", "Output_10_35.xlsx", "Output_18_40.xlsx"]
@@ -1825,7 +1855,7 @@ for i in range(len(outNames)):
     outPaths.append(os.path.join(endOutPaths[i], outNames[i]))
 inv_comp(outFile_2, outPaths)
     
-
+'''
 for budget in keys:
   outFile_2_b = os.path.join(outFile_2, 'Feasible Region', str(budget))
   fit_v_price(outFile_2_b, search='re')
@@ -1869,3 +1899,4 @@ for perc in percs_str:
                                         "Output_0_40.xlsx"))
 
 re_comp(outFile_5, index='pros', addCurrent = base_casePaths)
+'''
