@@ -74,11 +74,6 @@ def fit_search(in_path, out_path, prices,
         base_npv = file.loc['NPV', 0]
 
     # Grid search
-    global fits
-    global fit_mid
-    global fit_right
-    global fit_left
-    
     try:
         output_files = os.listdir(out_path)
         
@@ -339,13 +334,13 @@ cwd = os.getcwd()
 
 
 outFile_sum = os.path.join(cwd, 'Outputs')
-
+'''
 # Current Case ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 in_path = os.path.join(cwd, 'Inputs', 'inputs.xlsx')
 out_path = os.path.join(cwd, 'Outputs', '0. Current Case')
 single_run(in_path=in_path, fit=0, elec_price=0.4, out_path=out_path,
            total_budget=np.inf)
-
+'''
 # Current budget
 current_path = os.path.join(cwd, 
                             'Outputs', 
@@ -361,7 +356,7 @@ for y in range(len(current_cfs.columns)):
     current_budget += capex_y * (1 / (1 + interest) ** y)
 
 # Budget sensitivity ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-in_path = os.path.join(cwd, 'Inputs', 'inputs.xlsx')
+in_path = os.path.join(cwd, 'Inputs', 'inputs_RE.xlsx')
 out_path = os.path.join(cwd, 'Outputs', '1. Budget')
 
 #   Creating Bugdet Range
@@ -375,10 +370,10 @@ prices = np.arange(0, 0.41, 0.01)
 prices_gs = np.arange(0, 0.41, 0.01)
 fits = np.arange(0, 0.26, 0.01)
 
-prices_gs = [0.29]
-prices = [0.29]
-fits = [0.04]
-budgets = [2000000]
+# prices_gs = [0.29]
+# prices = [0.29]
+# fits = [0.04]
+budgets = [250000]
 out_path_gs = os.path.join(cwd, 'Outputs', '1. Budget', 'Grid Search')
 
 for budget in budgets:
@@ -392,7 +387,7 @@ summary_path_1 = os.path.join(outFile_sum, '1. Budget', 'Summary.xlsx')
 func.eval_summary(os.path.join(cwd, 'Outputs', '1. Budget', 
                                'Grid Search', 'Output Files'),
                   max_fits = summary_path_1)
-
+'''
 # RE Sensitivity ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 in_path = os.path.join(cwd, 'Inputs', 'inputs_RE.xlsx')
 out_path = os.path.join(cwd, 'Outputs', '2. RE sensitivity')
@@ -469,3 +464,4 @@ summary_path_5 = os.path.join(outFile_sum, '3. Prosumer percentage',
 func.eval_summary(os.path.join(cwd, 'Outputs', '3. Prosumer percentage', 
                                'Grid Search', 'Output Files'),
                   max_fits = summary_path_5, index='pros')
+'''

@@ -578,7 +578,7 @@ class Model_1:
                * max(self.heat_r_k) * 100)
         e = 0.01
         
-        '''
+        
         m.addConstrs(((d_cons[y, d, h] ==
                        disp['Diesel Generator', y, d, h]
                        * self.heat_r_k[1])
@@ -680,7 +680,7 @@ class Model_1:
                       for h in range(self.hours)
                       ),
                      name="case 3.2")
-        
+        '''
         #----------------------------------------------------------------------#
         # Battery Operation                                                    #
         #----------------------------------------------------------------------#
