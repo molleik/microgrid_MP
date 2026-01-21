@@ -373,7 +373,7 @@ def to_xlsx(model, fit, elec_price, out_path, multi=1, index='re'):
         ud.to_excel(writer, sheet_name='Unmet Demand')
         house_surplus.to_excel(writer, sheet_name='Household Surplus')
 
-def eval_summary(outPath, years = 15, max_fits=None, index='budget'):
+def eval_summary(outPath, pros_gen, years = 15, max_fits=None, index='budget'):
     
     assert (index == 'budget'
             or index == 're'
@@ -386,7 +386,8 @@ def eval_summary(outPath, years = 15, max_fits=None, index='budget'):
               'pros': 'Prosumer percentage'}
     metrics = pd.DataFrame(columns = [labels[index], 'FiT', 'Price', 
                                       'Unmet Demand', 'Wasted Surplus',
-                                      'Household Surplus'])
+                                      'Household Surplus', 
+                                      'Wasted generation (from total)'])
     metrics.set_index(labels[index], inplace=True)
     
     if max_fits != None:
@@ -411,6 +412,7 @@ def eval_summary(outPath, years = 15, max_fits=None, index='budget'):
         files = os.listdir(os.path.join(outPath, i))
         
         waste_perc = np.nan
+        waste_pros_gen_perc = np.nan
         ud_perc = np.nan
         best_fit = np.nan
         best_el_price = np.nan
@@ -453,6 +455,7 @@ def eval_summary(outPath, years = 15, max_fits=None, index='budget'):
                                             * day_weights[d])
                     
                     waste_perc = waste / net_surplus
+                    waste_pros_gen_perc = waste / pros_gen
                     
                     unmet_demand = summary['Summary'].loc["Unmet Demand"][0]
                     demand_df = summary['Yearly demand']
@@ -472,8 +475,10 @@ def eval_summary(outPath, years = 15, max_fits=None, index='budget'):
         if best_surp == 0:
             best_surp = np.nan
         metrics.loc[i] = [best_fit, best_el_price, ud_perc,
-                                 waste_perc, best_surp]
-                    
+                                 waste_perc, best_surp, waste_pros_gen_perc]
+    
+    metrics.index = metrics.index.astype(float)
+    metrics = metrics.sort_index()                
     outFile = os.path.join(outPath, '..', 'Evaluation Metrics.xlsx')
     metrics.to_excel(outFile)
     

@@ -137,7 +137,8 @@ def inst_cap(outFile, multi=1):
         ax.set_yticks([i for i in range (0, 1001, 250)])
       
     plt.subplots_adjust(top=.85)
-    plot_path = os.path.join(new_plots_folder, f"Installed_Capacities_{fit}_{el_price}.png")
+    plot_path = os.path.join(new_plots_folder, 
+                             f"Installed_Capacities_{fit}_{el_price}.png")
     plt.savefig(plot_path)
     plt.close()
     
@@ -1783,7 +1784,7 @@ add_ret(outFile_0, multi=0)
 gen_year(outFile_0, multi=0)
 rep_day(outFile_0, multi=0, year=10, day=1)
 inst_cap(outFile_0, multi=0)
-
+'''
 # Budget~~ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 outFile_1 = os.path.join(outFile, '1. Budget sensitivity')
 
@@ -1808,7 +1809,7 @@ re_comp(outFile_1, index='budget', addCurrent=outFile_0)
 # Technical Analysis
 capacity_sensitivity(outFile_1, 'budget', s_range_1=keys)
 energy_sensitivity(outFile_1, 'budget', s_range_1=keys)
-
+'''
 # Daily generation 
 #   Find summary
 emFile_1 = pd.read_excel(os.path.join(outFile_1,
@@ -1826,19 +1827,19 @@ for _, row in emFile_1.iterrows():
                                 f'Output_{fit}_{price}.xlsx')
     rep_day(outPath_day, 10, 1, 1)
 
-'''
+
 # RE sensitivity ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 outFile_2 = os.path.join(outFile, "2. RE sensitivity")
-'''
+
 fit_v_price(outFile_2)
 
 current_budget = 400000
 re_levels = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6]
 
 summaryPath_2_1 = os.path.join(outFile_2, 'Summary.xlsx')
-'''
+
 outFile_2_1 = os.path.join(outFile_2, 'Grid Search')
-'''
+
 for re_level in re_levels:
     surp_heatmap(outFile_2_1, re_level, max_fits=summaryPath_2_1, lb = 0.25)
     
@@ -1846,7 +1847,7 @@ energy_sensitivity(outFile_2_1, 're', re_levels)
 capacity_sensitivity(outFile_2_1, 're', re_levels)
 re_comp(outFile_2_1, index='re', addCurrent=outFile_0)
 min_v_act_RE([outFile_2_1])
-'''
+
 endOutPaths = [os.path.join(outFile_2_1, "Output Files", re) 
                for re in ['40', '50', '60']]
 outNames = ["Output_11_35.xlsx", "Output_10_35.xlsx", "Output_18_40.xlsx"]
@@ -1855,7 +1856,7 @@ for i in range(len(outNames)):
     outPaths.append(os.path.join(endOutPaths[i], outNames[i]))
 inv_comp(outFile_2, outPaths)
     
-'''
+
 for budget in keys:
   outFile_2_b = os.path.join(outFile_2, 'Feasible Region', str(budget))
   fit_v_price(outFile_2_b, search='re')

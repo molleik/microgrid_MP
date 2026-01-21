@@ -373,19 +373,29 @@ fits = np.arange(0, 0.26, 0.01)
 # prices_gs = [0.29]
 # prices = [0.29]
 # fits = [0.04]
-budgets = [250000]
+# budgets = [1750000, 2000000]
 out_path_gs = os.path.join(cwd, 'Outputs', '1. Budget', 'Grid Search')
-
+'''
 for budget in budgets:
     fit_search(in_path, out_path, prices, re_level=0,
                 total_budget=budget, search='budget')
     multi_run(in_path=in_path, fits=fits, elec_prices=prices_gs, 
               out_path=out_path_gs, re_level=0, 
               total_budget=budget)
+'''
+#   Finding total prosumer generation
+inFile = pd.read_excel(in_path, sheet_name=None)
+day_weights = inFile['day_weights']['Weight'].tolist()
+pros_cap = sum(inFile['rent_cap'].set_index('Unnamed: 0').iloc[1])
+pros_gen = 0
+i = 0
+for _, row in inFile['cap_factors'].set_index('Unnamed: 0').iterrows():
+    pros_gen += sum(row) * pros_cap * day_weights[i] * 250 * 15
+    i += 1
 
 summary_path_1 = os.path.join(outFile_sum, '1. Budget', 'Summary.xlsx')
 func.eval_summary(os.path.join(cwd, 'Outputs', '1. Budget', 
-                               'Grid Search', 'Output Files'),
+                                'Grid Search', 'Output Files'), pros_gen,
                   max_fits = summary_path_1)
 '''
 # RE Sensitivity ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
