@@ -241,7 +241,7 @@ class Model_1:
                                 for y in range(self.years))
                        + quicksum(salvage[g]
                                   for g in self.techs)
-                       * (1 / ((1 + self.i)) ** self.years), 
+                       * (1 / ((1 + self.i) ** self.years)), 
                        GRB.MAXIMIZE)
 
         #----------------------------------------------------------------------#
@@ -340,8 +340,9 @@ class Model_1:
         m.addConstrs(((salvage[g] ==
                        quicksum(added_cap[g, y] 
                        * self.ucc[g][self.years - 1]
-                       *(1 - (self.years - y) / self.years)
-                       for y in range(self.years - self.life[g]))
+                       *(1 - ((self.years - y) / self.life[g]))
+                       for y in range(max(self.years - self.life[g], 0), 
+                                      self.years))
                        for g in self.techs)
                       ), name='Salvage value'
                      )        
@@ -363,7 +364,7 @@ class Model_1:
                       ),
                      "Supply-demand balance"
                      )
-        
+        '''
         m.addConstrs(((quicksum(ud[y, d, h] * self.d_weights[d]
                                 for d in range(self.days)
                                 for h in range(self.hours)) 
@@ -378,7 +379,15 @@ class Model_1:
                       ),
                      "maximum yearly unmet demand"
                      )
-        
+        '''
+        # test
+        m.addConstr(((quicksum(ud[y, d, h] * self.d_weights[d]
+                                for y in range(self.years)
+                                for d in range(self.days)
+                                for h in range(self.hours))
+                       <= self.md_level)),
+                     "test met_demand"
+                     )
         # Feed-in capacity constraints
         m.addConstrs(((feed_in[i, y, d, h] <=
                        self.RE_max 
@@ -773,6 +782,7 @@ class Model_1:
         self.bin_heat_rate = bin_heat_rate
         self.ud = ud
         self.soc_0 = soc_0
+        self.salvage = salvage
         
         #Intermediate variables
         self.tr = tr

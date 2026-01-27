@@ -380,6 +380,10 @@ def eval_summary(outPath, pros_gen, years = 15, max_fits=None, index='budget'):
             or index == 'voll'
             or index == 'pros'), "Wrong index type"
     
+    assert (type(pros_gen) == float 
+            or type(pros_gen) == int 
+            or type(pros_gen) == dict), "Unsupported prosumer generation input"
+    
     labels = {'budget': 'Budget',
               're': 'RE target',
               'voll':'VoLL',
@@ -394,9 +398,13 @@ def eval_summary(outPath, pros_gen, years = 15, max_fits=None, index='budget'):
         max_fits_df = pd.read_excel(max_fits, sheet_name=None)
         
     indices = os.listdir(outPath)
+    if index == 'pros':
+        indices_int = [int(index) for index in indices]
+        indices.sort()
+        indices = [str(index) for index in indices_int]
     
-    for i in indices:
-        
+    for j, i in enumerate(indices):
+        print(i)
         if max_fits != None and (index == 'pros' or index == 're'):
             max_fits_re = max_fits_df[
                 str((float(i) / 100)).rstrip('0').rstrip('.')
@@ -454,8 +462,17 @@ def eval_summary(outPath, pros_gen, years = 15, max_fits=None, index='budget'):
                             net_surplus += (net_surplus_df.loc[float(f'{y}.{d}')].sum()
                                             * day_weights[d])
                     
-                    waste_perc = waste / net_surplus
-                    waste_pros_gen_perc = waste / pros_gen
+                    if net_surplus > 0:
+                        waste_perc = waste / net_surplus
+                    elif net_surplus == 0:
+                        waste_perc = 0
+                    if type(pros_gen) == dict:
+                        if pros_gen[round(float(i) / 100, 2)] > 0:
+                            waste_pros_gen_perc = waste / pros_gen[round(float(i) / 100, 2)]
+                        else:
+                            waste_pros_gen_perc = 0
+                    else:
+                        waste_pros_gen_perc = waste / pros_gen
                     
                     unmet_demand = summary['Summary'].loc["Unmet Demand"][0]
                     demand_df = summary['Yearly demand']
