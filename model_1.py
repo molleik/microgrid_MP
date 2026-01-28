@@ -145,7 +145,7 @@ class Model_1:
 
 
 
-    def solve(self, fit, elec_price, md_level=0, ud_penalty=0, re_level=0, 
+    def solve(self, fit, elec_price, md_level=np.inf, ud_penalty=0, re_level=0, 
               voll=0.7, total_budget=np.inf, interest=0.1, interest_re=0.04,
               re_start=0, pros_perc=None):
         'Create and solve the model'

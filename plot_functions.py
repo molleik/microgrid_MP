@@ -354,19 +354,12 @@ def get_npv(casePath):
     plt.savefig(new_plots_folder, dpi=300, bbox_inches='tight')
     
     
-def fit_v_price(casePath, search='re', keys=None, colors = None):
+def fit_v_price(casePath, search='re', keys=None, colors = None, max_sol = None):
     sns.set(font_scale=1.2)
     sns.set_style('whitegrid')
     
-    global price_plot
-    global fit_plot 
-    global prices
-    global fits
-    global P_n
-    global full_fits
-    global FiT_last
-    global mask
-    
+    name_map = {'pros': 'Prosumer percentage',
+                'budget': 'Budget'}
     new_plots_folder = os.path.join(casePath, "FiTs v Prices.png")
     if len(keys) == 1:
         new_plots_folder = os.path.join(casePath, f"FiTs v Prices_{keys[0]}.png")
@@ -459,12 +452,21 @@ def fit_v_price(casePath, search='re', keys=None, colors = None):
                    marker='x', color='red', zorder=3, 
                    label='Infeasible' if show_infeasible_label else "")
         '''
+
         i+=1
         show_infeasible_label = False
     
-    plt.axvline(x=0.4, color='gray', linestyle='--', linewidth=1,
+    plt.axvline(x=0.4, color='red', linestyle='--', linewidth=1,
                 label= "Current price")
     
+    i = 0
+    if max_sol != None:
+        max_sol_df = pd.read_excel(max_sol).set_index(name_map[search])
+        for _, row in max_sol_df.enumerate():
+            opt_p = row['Price']
+            opt_fit = row['FiT']
+            ax.scatter([opt_p], [opt_fit])
+            
     ax.set_xlabel('Price (USD)')
     ax.set_ylabel('Maximum Feed-in Tariff (USD)')
     if search == 're' or search == 'pros':
@@ -2078,16 +2080,17 @@ outFile_5 = os.path.join(outFile, '3. Prosumer percentage')
 
 base_casePaths = []
 percs_str = os.listdir(os.path.join(outFile_5, "Base Cases"))
-#percs = [int(i) for i in percs_str]
+# percs = [int(i) for i in percs_str]
 # percs.sort()
 # percs_str = [str(i) for i in percs]
-percs_str = ['0']
+percs_str = ['10']
 
 for perc in percs_str:
     base_p = os.path.join(outFile_5,
-                          "Base Cases_test",
+                          "Grid Search",
+                          'Output Files',
                           perc,
-                          "Output_0_40.xlsx")
+                          "Output_18_38.xlsx")
     base_casePaths.append(base_p)
     inst_cap(base_p, 1)
     gen_year(base_p, 1)
@@ -2136,7 +2139,8 @@ for _, row in emFile_1.iterrows():
     # add_ret(outPath_day, multi=1)
     gen_year(outPath_day)
     inst_cap(outPath_day)
-'''
+
 outttt = os.path.join(outFile_5, 'Grid Search_test', "Output Files", "0")
 gen_year(os.path.join(outttt, "Output_0_40.xlsx"), 1)
 inst_cap(os.path.join(outttt, "Output_0_40.xlsx"), 1)
+'''
