@@ -381,12 +381,13 @@ class Model_1:
                      )
         '''
         # test
-        m.addConstr(((quicksum(ud[y, d, h] * self.d_weights[d]
+        m.addConstr(((quicksum(ud[y, d, h] 
+                               * self.d_weights[d]
                                 for y in range(self.years)
                                 for d in range(self.days)
                                 for h in range(self.hours))
                        <= self.md_level)),
-                     "test met_demand"
+                     "discounted met sdemand"
                      )
         # Feed-in capacity constraints
         m.addConstrs(((feed_in[i, y, d, h] <=

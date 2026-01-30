@@ -183,7 +183,7 @@ def fit_search(in_path, out_path, prices,
                                     for (i, y, d, h) in model.feed_in.keys())
                 model_obj = model.m.getObjective().getValue()
                 
-                if model_feed_in <= 5000 and model_obj >= base_npv:
+                if model_feed_in == 0 and model_obj >= base_npv:
                     fit_mid = 'inf'
                     break
                 
@@ -271,7 +271,7 @@ def fit_search(in_path, out_path, prices,
                                     for (i, y, d, h) in model.feed_in.keys())
                 model_obj = model.m.getObjective().getValue()
                 
-                if model_feed_in <= 5000 and model_obj >= base_npv:
+                if model_feed_in == 0 and model_obj >= base_npv:
                     fit_mid = 'inf'
                     break
                 
@@ -328,6 +328,69 @@ def fit_search(in_path, out_path, prices,
                     elif index == 'pros':
                         summary.to_excel(writer, 
                                          sheet_name=str(pros_perc))
+                        
+def min_fi(casePath, keys, max_fit, tot_d, perc, day_weights=[199, 106, 60]):
+    
+    global result_keys
+    global df_out
+    global all_results
+    
+    sumPath = os.path.join(casePath, "Summary.xlsx")
+    sumFile = pd.read_excel(sumPath, sheet_name = None)
+    filePaths = os.path.join(casePath, "Grid Search", "Output Files")
+    output_path = os.path.join(casePath, "Summary feed-in.xlsx")
+        
+    all_results = {}
+    result_keys = []
+    for key in keys:
+        out = sumFile[str(key)].set_index("Unnamed: 0")
+        fit_row = out.loc["Feed-in Tariffs"]
+        if not np.isnan(fit_row.tolist()[-1]):
+            min_fit = None
+        else:
+            non_nan_idx = np.where(~np.isnan(fit_row))[0]
+            col_idx = non_nan_idx[-1]
+            min_fit = out.loc["Feed-in Tariffs", col_idx]
+            min_p = out.loc["Prices", col_idx]
+        
+        if min_fit != None:
+            results = {}
+            result_keys.append(key)
+            for p in np.arange(round(min_p, 2) + 0.01, 0.41, 0.01):
+                max_fit_p = None
+                for fit in np.arange(round(min_fit, 2), max_fit, 0.01):
+                    outFile = pd.read_excel(
+                        os.path.join(filePaths,
+                                     str(key),
+                                     f"Output_{int(fit * 100)}_{int(p * 100)}.xlsx"),
+                        sheet_name = None
+                        )
+                    out_fi = outFile['Fed-in Capacity']
+                    out_fi.set_index("Unnamed: 0", inplace=True)
+                    fi = 0
+                    for _, row in out_fi.iterrows():
+                        day = int(str(_).split('.')[1])
+                        fi += sum(row) * day_weights[day]
+                    out_ud = outFile["Summary"].set_index("Unnamed: 0")
+                    ud = out_ud.loc["Unmet Demand", 0]
+                    threshold = fi / (tot_d - ud)
+                    if threshold <= perc:
+                        max_fit_p = fit
+                        break
+                    if fit == max_fit - 0.01:
+                        max_fit_p = np.inf
+                        
+                results[round(p, 2)] = max_fit_p
+        
+            all_results[key] = results
+            
+    with pd.ExcelWriter(output_path, 
+                        engine='openpyxl') as writer:
+        for key in result_keys:
+            df_out = pd.DataFrame(all_results[key], index=["max_fit"])
+            df_out.to_excel(writer, sheet_name=str(key))
+            
+            
 
 cwd = os.getcwd()
 # day_weights = [199, 106, 60]
@@ -343,7 +406,7 @@ in_path = os.path.join(cwd, 'Inputs', 'inputs.xlsx')
 out_path = os.path.join(cwd, 'Outputs', '0. Current Case')
 single_run(in_path=in_path, fit=0, elec_price=0.4, out_path=out_path,
            total_budget=np.inf)
-
+'''
 # Current budget
 current_path = os.path.join(cwd, 
                             'Outputs', 
@@ -362,13 +425,17 @@ for y in range(len(current_cfs.columns)):
 in_path = os.path.join(cwd, 'Inputs', 'inputs_RE.xlsx')
 out_path = os.path.join(cwd, 'Outputs', '1. Budget')
 
+
 #   Creating Bugdet Range
 budgets = np.arange(250000, 2000001, 250000)
 budgets = budgets.tolist()
 budgets.insert(1, int(current_budget // 1e5 * 1e5))
 budgets.remove(500000)
 budgets.insert(0, 100000)
+budgets.insert(3, 420000)
 
+min_fi(out_path, budgets, 0.26, 30789066, 0.07)
+'''
 prices = np.arange(0, 0.41, 0.01)
 prices_gs = np.arange(0, 0.41, 0.01)
 fits = np.arange(0.26, 0.41, 0.01)
@@ -376,15 +443,15 @@ fits = np.arange(0.26, 0.41, 0.01)
 # prices_gs = [0.29]
 # prices = [0.29]
 # fits = [0.04]
-budgets = [400000]
-out_path_gs = os.path.join(cwd, 'Outputs', '1. Budget', 'Grid Search')
+budgets = [175000, 420000]
+out_path_gs = os.path.join(cwd, 'Outputs', '1. Budget', 'Grid Search (extra)')
 
 for budget in budgets:
     fit_search(in_path, out_path, prices, re_level=0,
                 total_budget=budget, search='budget')
-    multi_run(in_path=in_path, fits=fits, elec_prices=prices_gs, 
-              out_path=out_path_gs, re_level=0, 
-              total_budget=budget)
+    # multi_run(in_path=in_path, fits=fits, elec_prices=prices_gs, 
+    #           out_path=out_path_gs, re_level=0, 
+    #           total_budget=budget)
 
 #   Finding total prosumer generation
 inFile = pd.read_excel(in_path, sheet_name=None)
@@ -398,7 +465,7 @@ for _, row in inFile['cap_factors'].set_index('Unnamed: 0').iterrows():
 
 summary_path_1 = os.path.join(outFile_sum, '1. Budget', 'Summary.xlsx')
 func.eval_summary(os.path.join(cwd, 'Outputs', '1. Budget', 
-                                'Grid Search', 'Output Files'), pros_gen,
+                                'Grid Search (extra)', 'Output Files'), pros_gen,
                   max_fits = summary_path_1)
 
 # RE Sensitivity ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
@@ -435,13 +502,12 @@ func.eval_summary(os.path.join(outFile_sum, '2. RE sensitivity',
                                'Grid Search', 'Output Files'),
                   pros_gen,
                   max_fits = summary_path_2_b, index='re')
-'''
+
 # Prosumer % ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 in_path = os.path.join(cwd, 'Inputs', 'inputs.xlsx')
 out_path = os.path.join(cwd, 'Outputs', '3. Prosumer percentage')
 
-# pros_percs = [0, 0.1, 0.25, 0.4, 0.5, 0.6, 0.75, 0.9, 1]
-pros_percs = [0.75, 0.9, 1]
+pros_percs = [0, 0.1, 0.25, 0.4, 0.5, 0.6, 0.75, 0.9, 1]
 prices = np.arange(0, 0.41, 0.01)
 prices_gs = np.arange(0, 0.41, 0.01)
 fits = np.arange(0, 0.26, 0.01)
@@ -453,26 +519,26 @@ pros_gens = {}
 inFile = pd.read_excel(in_path, sheet_name=None)
 day_weights = inFile['day_weights']['Weight'].tolist()
 pros_cap = sum(inFile['rent_cap'].set_index('Unnamed: 0').iloc[1])
-    
-# #   Current base cases:
-# for pros_perc in pros_percs:
-#     out_path_bc = os.path.join(out_path, 'Base Cases', 
-#                                 str(int(pros_perc * 100)))
-#     single_run(in_path=in_path, fit=0, elec_price=0.4, out_path=out_path_bc,
-#                 total_budget=np.inf, pros_perc = pros_perc)
-#     pros_gen = 0
-#     i = 0
-#     for _, row in inFile['cap_factors'].set_index('Unnamed: 0').iterrows():
-#         pros_gen += sum(row) * pros_cap * day_weights[i] * model.max_house[1] * 15
-#         i += 1
-#     pros_gens[pros_perc] = pros_gen
+
+#   Current base cases:
+for pros_perc in pros_percs:
+    out_path_bc = os.path.join(out_path, 'Base Cases', 
+                                str(int(pros_perc * 100)))
+    single_run(in_path=in_path, fit=0, elec_price=0.4, out_path=out_path_bc,
+                total_budget=np.inf, pros_perc = pros_perc)
+    pros_gen = 0
+    i = 0
+    for _, row in inFile['cap_factors'].set_index('Unnamed: 0').iterrows():
+        pros_gen += sum(row) * pros_cap * day_weights[i] * model.max_house[1] * 15
+        i += 1
+    pros_gens[pros_perc] = pros_gen
 
 base_npvs = []
 current_budgets = []
 
 for pros_perc in pros_percs:
     base_path = os.path.join(out_path, "Base Cases", 
-                             str(int(pros_perc * 100)), "Output_0_40.xlsx")
+                              str(int(pros_perc * 100)), "Output_0_40.xlsx")
     file = pd.read_excel(base_path, sheet_name=None)
     file['Summary'].set_index('Unnamed: 0', inplace=True)
     base_npvs.append(file['Summary'].loc['NPV', 0])
@@ -494,12 +560,12 @@ for i, pros_perc in enumerate(pros_percs):
     multi_run(in_path=in_path, fits=fits, elec_prices=prices_gs, 
               out_path=out_path_gs, total_budget=current_budgets[i], 
               pros_perc=pros_perc, index='pros', md_level=np.inf) #244259.5952)
-'''
-# summary_path_5 = os.path.join(out_path, 'Summary.xlsx')
-# func.eval_summary(os.path.join(cwd, 'Outputs', '3. Prosumer percentage', 
-#                                'Grid Search', 'Output Files'),
-#                   pros_gens,
-#                   max_fits = summary_path_5, index='pros')
+
+summary_path_5 = os.path.join(out_path, 'Summary.xlsx')
+func.eval_summary(os.path.join(cwd, 'Outputs', '3. Prosumer percentage', 
+                                'Grid Search', 'Output Files'),
+                  pros_gens,
+                  max_fits = summary_path_5, index='pros')
 
 npvs = []
 hess = []
@@ -522,4 +588,44 @@ for f in to_check:
         expenses = np.multiply(capex[_], row)
         budget += np.dot(expenses, d_factors)
     budgets.append(budget)
-'''
+
+
+# Constrained Prosumer % ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+in_path = os.path.join(cwd, 'Inputs', 'inputs.xlsx')
+out_path_b = os.path.join(cwd, 'Outputs', '4. Prosumer percentage constrained')
+out_path_gs_b = os.path.join(out_path_b, 'Grid Search')
+
+prices = np.arange(0, 0.41, 0.01)
+prices_gs = np.arange(0, 0.41, 0.01)
+fits = np.arange(0, 0.26, 0.01)
+
+md_levels = []
+interest_reg = 0.04
+pros_percs = [0, 0.1, 0.25, 0.4, 0.5, 0.6, 0.75, 0.9, 1]
+
+inFile = pd.read_excel(in_path, sheet_name=None)
+day_weights = inFile['day_weights']['Weight'].tolist()
+
+for i, pros_perc in enumerate(pros_percs):
+    base_path = os.path.join(out_path, "Base Cases", 
+                              str(int(pros_perc * 100)), "Output_0_40.xlsx")
+    file = pd.read_excel(base_path, sheet_name=None)
+    summ = file['Summary'].set_index('Unnamed: 0')
+    md_level = summ.loc["Unmet Demand", 0]
+    md_levels.append(md_level)
+
+in_path = os.path.join(cwd, 'Inputs', 'inputs_RE.xlsx')
+
+for i, pros_perc in enumerate(pros_percs):
+#     fit_search(in_path, out_path_b, prices, total_budget=current_budgets[i], 
+#                 pros_perc=pros_perc, search='pros', base_npv = base_npvs[i],
+#                 md_level=md_levels[i])
+    multi_run(in_path=in_path, fits=fits, elec_prices=prices_gs, 
+              out_path=out_path_gs_b, total_budget=current_budgets[i], 
+              pros_perc=pros_perc, index='pros', md_level=md_levels[i])
+    
+summary_path_5 = os.path.join(out_path_b, 'Summary.xlsx')
+func.eval_summary(os.path.join(out_path_gs_b, 'Output Files'),
+                  pros_gens,
+                  max_fits = summary_path_5, index='pros')
+''';
