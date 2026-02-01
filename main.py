@@ -370,15 +370,11 @@ def fit_search(in_path, out_path, prices,
                         
 def min_fi(casePath, keys, max_fit, tot_d, perc, day_weights=[199, 106, 60]):
     
-    global result_keys
-    global df_out
-    global all_results
-    
     sumPath = os.path.join(casePath, "Summary.xlsx")
     sumFile = pd.read_excel(sumPath, sheet_name = None)
     filePaths = os.path.join(casePath, "Grid Search", "Output Files")
     output_path = os.path.join(casePath, "Summary feed-in.xlsx")
-        
+    global min_fit
     all_results = {}
     result_keys = []
     for key in keys:
@@ -388,7 +384,7 @@ def min_fi(casePath, keys, max_fit, tot_d, perc, day_weights=[199, 106, 60]):
             min_fit = None
         else:
             non_nan_idx = np.where(~np.isnan(fit_row))[0]
-            col_idx = non_nan_idx[-1]
+            col_idx = non_nan_idx[-2]
             min_fit = out.loc["Feed-in Tariffs", col_idx]
             min_p = out.loc["Prices", col_idx]
         
@@ -416,8 +412,8 @@ def min_fi(casePath, keys, max_fit, tot_d, perc, day_weights=[199, 106, 60]):
                     if threshold <= perc:
                         max_fit_p = fit
                         break
-                    if fit == max_fit - 0.01:
-                        max_fit_p = np.inf
+                    # if fit == p - 0.01:
+                    #     max_fit_p = 100
                         
                 results[round(p, 2)] = max_fit_p
         
@@ -480,6 +476,9 @@ prices = np.arange(0, 0.41, 0.01)
 prices_gs = np.arange(0, 0.41, 0.01)
 fits = np.arange(0, 0.26, 0.01)
 
+min_fi(out_path, budgets, 0.26, 30789066.4, 0.05)
+
+'''
 for budget in budgets:
     fit_search(in_path, out_path, prices, re_level=0,
                 total_budget=budget, search='budget')
@@ -496,10 +495,11 @@ i = 0
 for _, row in inFile['cap_factors'].set_index('Unnamed: 0').iterrows():
     pros_gen += sum(row) * pros_cap * day_weights[i] * 250 * 15
     i += 1
-
+'''
 summary_path_1 = os.path.join(outFile_sum, '1. Budget', 'Summary.xlsx')
+
 func.eval_summary(os.path.join(cwd, 'Outputs', '1. Budget', 
-                                'Grid Search (extra)', 'Output Files'), pros_gen,
+                                'Grid Search', 'Output Files'), pros_gen,
                   max_fits = summary_path_1)
 
 # RE Sensitivity ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
@@ -702,4 +702,4 @@ summary_path_1 = os.path.join(outFile_sum, '5. Budget constrained', 'Summary.xls
 func.eval_summary(os.path.join(cwd, 'Outputs', '5. Budget constrained', 
                                 'Grid Search', 'Output Files'), pros_gen,
                   max_fits = summary_path_1)
-'''
+''';

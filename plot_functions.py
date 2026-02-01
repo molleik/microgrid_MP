@@ -443,11 +443,18 @@ def fit_v_price(casePath, search='re', keys=None, colors = None,
             lower_bound = df_fi.iloc[0].tolist()
             price_vals = [float(p) for p in df_fi.columns]
             price_vals.sort()
+            
+            upper = np.array(fit_plot[-len(price_vals):])
+            lower = np.array(lower_bound)
+            mask = lower < upper
+
         
             poly = ax.fill_between(price_vals,
                             lower_bound,
                             fit_plot[-len(price_vals):],
                             alpha=1, facecolor='none', hatch='//',
+                            where=mask,
+                            interpolate=True,
                             zorder=len(keys) - i,
                             edgecolor=colors[i],
                             linewidth=0.5)
@@ -482,7 +489,7 @@ def fit_v_price(casePath, search='re', keys=None, colors = None,
     elif search == 'budget':
         handles, labels = ax.get_legend_handles_labels()
         hatch_proxy = mpatches.Patch(facecolor='none', edgecolor='grey', hatch='///', label='Policies with limited feed-in')
-        highlight_proxy = mpatches.Patch(facecolor='lightgrey', alpha=0.5, label='Policies with feed-in')
+        highlight_proxy = mpatches.Patch(facecolor='lightgrey', alpha=0.7, label='Policies with feed-in')
         
         handles, labels = ax.get_legend_handles_labels()
         handles += [highlight_proxy, hatch_proxy]
@@ -512,7 +519,7 @@ def fi_gradient(casePath, key, day_weights=[199, 106, 60]):
     
     filePaths = os.path.join(casePath, "Grid Search", 
                              "Output Files", str(key))
-    summaryFile = os.path.join(casePath, "Summary (initial).xlsx")
+    summaryFile = os.path.join(casePath, "Summary.xlsx")
     files = os.listdir(filePaths)
     
     data = {'Prices ($)': [],
@@ -902,20 +909,31 @@ def re_comp(casePath, index='re', addCurrent=None):
     if index == 'budget':
         width = 0.3
         x = np.array(eval_sum[indices[index]]) / 1e6
-        #x = np.delete(x, 1)
+        x = np.delete(x, 2)
         y_ud = np.array(eval_sum['Unmet Demand']) * 100
+        y_ud = np.delete(y_ud, 2)
         y_ws = np.array(eval_sum['Wasted generation (from total)']) * 100
+        y_ws = np.delete(y_ws, 2)
         y_hs = np.array(eval_sum['Household Surplus']) / 1e6
+        y_hs = np.delete(y_hs, 2)
         y_p = np.array(eval_sum['Price'])
+        y_p = np.delete(y_p, 2)
         y_fit = np.array(eval_sum['FiT'])
+        y_fit = np.delete(y_fit, 2)
     else:
         width = 0.3
         x = np.array(eval_sum[indices[index]])
+        x = np.delete(x, 2)
         y_ud = np.array(eval_sum['Unmet Demand']) * 100
+        y_ud = np.delete(y_ud, 2)
         y_ws = np.array(eval_sum['Wasted generation (from total)']) * 100
+        y_ws = np.delete(y_ws, 2)
         y_hs = np.array(eval_sum['Household Surplus']) / 1e6
+        y_hs = np.delete(y_hs, 2)
         y_p = np.array(eval_sum['Price'])
+        y_p = np.delete(y_p, 2)
         y_fit = np.array(eval_sum['FiT'])
+        y_fit = np.delete(y_fit, 2)
         
     ax_ud.bar(np.arange(len(x)) - width/2, y_ud,
               width=width,
@@ -1297,7 +1315,7 @@ def energy_sensitivity(casePath, way_1, s_range_1,
     
     summary_df = summary_df.sort_index()
     ax2.plot(np.arange(len(s_range_1)),
-             np.array(summary_df['Wasted generation (from total)']) * 100,
+             np.delete(np.array(summary_df['Wasted generation (from total)']), 2) * 100,
              '--',
              label = 'Wasted excess',
              color = "#3a737d",
@@ -2241,7 +2259,7 @@ rep_day(outFile_0, multi=0, year=10, day=1)
 inst_cap(outFile_0, multi=0)
 '''
 # Budget~~ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-outFile_1 = os.path.join(outFile, '5. Budget constrained')
+outFile_1 = os.path.join(outFile, '1. Budget')
 
 # Economic Analysis
 keys = [250000, 400000, 750000, 1750000]
@@ -2251,42 +2269,23 @@ colors = ["#595755", "#6d597a", "#DA4167" ,
 
 outFile_1_1 = os.path.join(outFile_1, 'Grid Search')
 summary_path_1 = os.path.join(outFile_1, 'Summary.xlsx')
-'''
-em_path_1 = os.path.join(outFile_1, 'Grid Search', 'Evaluation Metrics.xlsx')
-files = ["Output_12_36.xlsx", "Output_13_36.xlsx", 
-         "Output_14_36.xlsx", "Output_12_35.xlsx"]
-
-for file in files:
-    file_path = os.path.join(outFile_1, "Grid Search", "Output Files",
-                             "400000", file)
-    gen_year(file_path)
-    rep_day(file_path, 5, 0)
-    rep_day(file_path, 5, 1)
-    rep_day(file_path, 5, 2)
-    inst_cap(file_path)
 
 fit_v_price(outFile_1, search='budget', keys=keys, 
             colors = ["#6d597a", "#DA4167" , "#f2b382", "#c2deaf"])
 
-# keys = [420000]
-# fit_v_price(outFile_1, search='budget', keys=keys, 
-#             colors = ["#595755"])
+keys = [420000]
+fit_v_price(outFile_1, search='budget', keys=keys, 
+            colors = ["#595755"])
+'''
+keys = [420000]
 
-# keys = [420000]
-
-keys = [100000, 250000, 400000, 750000, 1000000, 1250000, 1500000, 
-        1750000, 2000000]
-
-keys = [1750000]
 for budget in keys:
     surp_heatmap(outFile_1_1, index='budget', key=budget, 
                   max_fits=summary_path_1, p_lb=0.26, fit_ub=0.22)
-    # fi_gradient(outFile_1, budget)
+    fi_gradient(outFile_1, budget)
 
-# keys = [400000]
-# surp_heatmap(outFile_1_1, index='budget', key=budget, 
-#               max_fits=summary_path_1)
-
+keys = [100000, 250000, 420000, 750000, 1000000,
+        1250000, 1500000, 1750000, 2000000]
 re_comp(outFile_1, index='budget', addCurrent=outFile_0)
 
 # Technical Analysis
