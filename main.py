@@ -16,7 +16,7 @@ import functions as func
 from model_1 import Model_1
 
 def single_run(in_path, fit, elec_price, out_path,
-               md_level=np.inf, ud_penalty=0, re_level=0, 
+               md_level=np.inf, ud_penalty=0.01, re_level=0, 
                voll=0.7, total_budget=np.inf, interest=0.1,
                re_start=0, pros_perc = None):
     
@@ -34,7 +34,7 @@ def single_run(in_path, fit, elec_price, out_path,
                  out_path, multi=0)
 
 def multi_run(in_path, fits, elec_prices, out_path,
-              md_level=np.inf, ud_penalty=0, re_level=0, 
+              md_level=np.inf, ud_penalty=0.01, re_level=0, 
               voll=0.7, total_budget=np.inf, index='budget', interest=0.1,
                re_start=0, pros_perc=None):
     
@@ -56,7 +56,7 @@ def multi_run(in_path, fits, elec_prices, out_path,
             print(f'Save to: {out_path}')
             
 def fit_search(in_path, out_path, prices,
-               md_level=np.inf, ud_penalty=0, re_level=0, voll=0.7,
+               md_level=np.inf, ud_penalty=0.01, re_level=0, voll=0.7,
                total_budget=np.inf, search='budget', interest=0.1,
                re_start=0, pros_perc=None, base_npv=None):
     
@@ -122,8 +122,15 @@ def fit_search(in_path, out_path, prices,
                     re_level=re_level, voll=voll, 
                     total_budget=total_budget, interest=interest,
                         re_start=re_start, pros_perc=pros_perc)
+        ud_correction = sum([model.ud[y, d, h].X
+                             * model.d_weights[d]
+                             * model.ud_penalty
+                             * (1 / (1 + model.i) ** y)
+                             for y in range(model.years)
+                             for d in range(model.days)
+                             for h in range(model.hours)])
         
-        if model.m.getObjective().getValue() < base_npv:
+        if float(model.m.ObjVal + ud_correction) < base_npv:
             print(f'No positive solution for {el_price}')
             fits.append(0)
             objs.append(base_npv)
@@ -177,21 +184,28 @@ def fit_search(in_path, out_path, prices,
                         re_level=re_level, voll=voll, 
                         total_budget=total_budget, interest=interest,
                         re_start=re_start, pros_perc=pros_perc)
+            ud_correction = sum([model.ud[y, d, h].X
+                                 * model.d_weights[d]
+                                 * model.ud_penalty
+                                 * (1 / (1 + model.i) ** y)
+                                 for y in range(model.years)
+                                 for d in range(model.days)
+                                 for h in range(model.hours)])
     
             while worse:
                 model_feed_in = sum(model.feed_in[i, y, d, h].X 
                                     for (i, y, d, h) in model.feed_in.keys())
-                model_obj = model.m.getObjective().getValue()
+                model_obj = float(model.m.ObjVal + ud_correction)
                 
                 if model_feed_in == 0 and model_obj >= base_npv:
                     fit_mid = 'inf'
                     break
                 
-                if (fit_right - fit_mid) < 0.01 and model_obj >= base_npv:
-                    print("------------breaking-----------------")
-                    break
+                # if (fit_right - fit_mid) < 0.01 and model_obj >= base_npv:
+                #     print("------------breaking-----------------")
+                #     break
                 
-                if model.m.getObjective().getValue() >= base_npv:
+                if model_obj >= base_npv:
                     fit_left = fit_mid
                 else:
                     fit_right = fit_mid
@@ -203,15 +217,24 @@ def fit_search(in_path, out_path, prices,
                             re_level=re_level, voll=voll,
                             total_budget=total_budget, interest=interest,
                             re_start=re_start, pros_perc=pros_perc)
-                if (abs(model.m.getObjective().getValue() - base_npv) <= 10000
-                    and model.m.getObjective().getValue() >= base_npv):
+                ud_correction = sum([model.ud[y, d, h].X
+                                     * model.d_weights[d]
+                                     * model.ud_penalty
+                                     * (1 / (1 + model.i) ** y)
+                                     for y in range(model.years)
+                                     for d in range(model.days)
+                                     for h in range(model.hours)])
+                model_obj = float(model.m.ObjVal + ud_correction)
+                
+                if (abs(model_obj - base_npv) <= 10000
+                    and model_obj >= base_npv):
                     worse = False
                 
             if fit_mid == 'inf':
                 break
             
             fits.append(fit_mid)
-            objs.append(model.m.getObjective().getValue())
+            objs.append(model_obj)
             func.output_data(model, 2)
             func.to_xlsx(model, round(fit_mid * 100), round(el_price * 100), 
                          os.path.join(out_path), index=search)
@@ -265,20 +288,27 @@ def fit_search(in_path, out_path, prices,
                         re_level = re_level, voll=voll,
                         total_budget=total_budget, interest=interest,
                         re_start=re_start, pros_perc=pros_perc)
+            ud_correction = sum([model.ud[y, d, h].X
+                                 * model.d_weights[d]
+                                 * model.ud_penalty
+                                 * (1 / (1 + model.i) ** y)
+                                 for y in range(model.years)
+                                 for d in range(model.days)
+                                 for h in range(model.hours)])
             
             while worse:
                 model_feed_in = sum(model.feed_in[i, y, d, h].X 
                                     for (i, y, d, h) in model.feed_in.keys())
-                model_obj = model.m.getObjective().getValue()
+                model_obj = float(model.m.ObjVal + ud_correction)
                 
                 if model_feed_in == 0 and model_obj >= base_npv:
                     fit_mid = 'inf'
                     break
                 
-                if (fit_right - fit_mid) < 0.01 and model_obj >= base_npv:
-                    break
+                # if (fit_right - fit_mid) < 0.01 and model_obj >= base_npv:
+                #     break
                 
-                if model.m.getObjective().getValue() >= base_npv:
+                if model_obj >= base_npv:
                     fit_left = fit_mid
                 else:
                     fit_right = fit_mid
@@ -290,15 +320,24 @@ def fit_search(in_path, out_path, prices,
                             re_level=re_level, voll=voll,
                             total_budget=total_budget, interest=interest,
                             pros_perc=pros_perc)
-                if (abs(model.m.getObjective().getValue() - base_npv) <= 10000
-                    and model.m.getObjective().getValue() >= base_npv):
+                ud_correction = sum([model.ud[y, d, h].X
+                                     * model.d_weights[d]
+                                     * model.ud_penalty
+                                     * (1 / (1 + model.i) ** y)
+                                     for y in range(model.years)
+                                     for d in range(model.days)
+                                     for h in range(model.hours)])
+                model_obj = float(model.m.ObjVal + ud_correction)
+                
+                if (abs(model_obj - base_npv) <= 10000
+                    and model_obj >= base_npv):
                     worse = False
                 
             if fit_mid == 'inf':
                 break
                     
             fits.append(fit_mid)
-            objs.append(model.m.getObjective().getValue())
+            objs.append(model_obj)
             func.output_data(model, 2)
             func.to_xlsx(model, round(fit_mid * 100), round(el_price * 100), 
                          out_path, index=search)
@@ -420,11 +459,13 @@ current_budget = 0
 for y in range(len(current_cfs.columns)):
     capex_y = current_cfs.loc['Total Capital Costs'][y]
     current_budget += capex_y * (1 / (1 + interest) ** y)
+    
+current_md = current_df['Summary'].set_index('Unnamed: 0').loc['Unmet Demand', 0]
 
 # Budget sensitivity ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 in_path = os.path.join(cwd, 'Inputs', 'inputs_RE.xlsx')
 out_path = os.path.join(cwd, 'Outputs', '1. Budget')
-
+out_path_gs = os.path.join(out_path, 'Grid Search')
 
 #   Creating Bugdet Range
 budgets = np.arange(250000, 2000001, 250000)
@@ -434,17 +475,10 @@ budgets.remove(500000)
 budgets.insert(0, 100000)
 budgets.insert(3, 420000)
 
-min_fi(out_path, budgets, 0.26, 30789066, 0.07)
-'''
+
 prices = np.arange(0, 0.41, 0.01)
 prices_gs = np.arange(0, 0.41, 0.01)
-fits = np.arange(0.26, 0.41, 0.01)
-
-# prices_gs = [0.29]
-# prices = [0.29]
-# fits = [0.04]
-budgets = [175000, 420000]
-out_path_gs = os.path.join(cwd, 'Outputs', '1. Budget', 'Grid Search (extra)')
+fits = np.arange(0, 0.26, 0.01)
 
 for budget in budgets:
     fit_search(in_path, out_path, prices, re_level=0,
@@ -452,7 +486,7 @@ for budget in budgets:
     # multi_run(in_path=in_path, fits=fits, elec_prices=prices_gs, 
     #           out_path=out_path_gs, re_level=0, 
     #           total_budget=budget)
-
+'''
 #   Finding total prosumer generation
 inFile = pd.read_excel(in_path, sheet_name=None)
 day_weights = inFile['day_weights']['Weight'].tolist()
@@ -554,12 +588,12 @@ for pros_perc in pros_percs:
 in_path = os.path.join(cwd, 'Inputs', 'inputs_RE.xlsx')
 
 for i, pros_perc in enumerate(pros_percs):
-    # fit_search(in_path, out_path, prices, total_budget=current_budgets[i], 
-    #             pros_perc=pros_perc, search='pros', base_npv = base_npvs[i],
-    #             md_level=np.inf) #244259.5952)
+    fit_search(in_path, out_path, prices, total_budget=current_budgets[i], 
+                pros_perc=pros_perc, search='pros', base_npv = base_npvs[i],
+                md_level=np.inf)
     multi_run(in_path=in_path, fits=fits, elec_prices=prices_gs, 
               out_path=out_path_gs, total_budget=current_budgets[i], 
-              pros_perc=pros_perc, index='pros', md_level=np.inf) #244259.5952)
+              pros_perc=pros_perc, index='pros', md_level=np.inf)
 
 summary_path_5 = os.path.join(out_path, 'Summary.xlsx')
 func.eval_summary(os.path.join(cwd, 'Outputs', '3. Prosumer percentage', 
@@ -628,4 +662,44 @@ summary_path_5 = os.path.join(out_path_b, 'Summary.xlsx')
 func.eval_summary(os.path.join(out_path_gs_b, 'Output Files'),
                   pros_gens,
                   max_fits = summary_path_5, index='pros')
-''';
+
+# Constrained Budget ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+in_path = os.path.join(cwd, 'Inputs', 'inputs_RE.xlsx')
+out_path_b = os.path.join(cwd, 'Outputs', '5. Budget constrained')
+out_path_gs_b = os.path.join(out_path_b, 'Grid Search')
+out_path = os.path.join(cwd, 'Outputs', '5. Budget constrained')
+
+#   Creating Bugdet Range
+budgets = np.arange(250000, 2000001, 250000)
+budgets = budgets.tolist()
+budgets.insert(1, int(current_budget // 1e5 * 1e5))
+budgets.remove(500000)
+budgets.insert(0, 100000)
+budgets.insert(3, 420000)
+
+prices = np.arange(0, 0.41, 0.01)
+prices_gs = np.arange(0, 0.41, 0.01)
+fits = np.arange(0.26, 0.41, 0.01)
+
+for budget in budgets:
+    fit_search(in_path, out_path_b, prices, re_level=0,
+                total_budget=budget, search='budget', md_level = current_md)
+    multi_run(in_path=in_path, fits=fits, elec_prices=prices_gs, 
+              out_path=out_path_gs_b, re_level=0, 
+              total_budget=budget, md_level = current_md)
+
+#   Finding total prosumer generation
+inFile = pd.read_excel(in_path, sheet_name=None)
+day_weights = inFile['day_weights']['Weight'].tolist()
+pros_cap = sum(inFile['rent_cap'].set_index('Unnamed: 0').iloc[1])
+pros_gen = 0
+i = 0
+for _, row in inFile['cap_factors'].set_index('Unnamed: 0').iterrows():
+    pros_gen += sum(row) * pros_cap * day_weights[i] * 250 * 15
+    i += 1
+
+summary_path_1 = os.path.join(outFile_sum, '5. Budget constrained', 'Summary.xlsx')
+func.eval_summary(os.path.join(cwd, 'Outputs', '5. Budget constrained', 
+                                'Grid Search', 'Output Files'), pros_gen,
+                  max_fits = summary_path_1)
+'''

@@ -339,7 +339,7 @@ class Model_1:
 
         m.addConstrs(((salvage[g] ==
                        quicksum(added_cap[g, y] 
-                       * self.ucc[g][self.years - 1]
+                       * self.ucc[g][self.years]
                        *(1 - ((self.years - y) / self.life[g]))
                        for y in range(max(self.years - self.life[g], 0), 
                                       self.years))
@@ -461,7 +461,7 @@ class Model_1:
         
         
         M = - (np.min(self.demand[min(self.demand)]) 
-               * max(self.max_house)
+               * sum(self.max_house)
                / np.min(self.cap_fact[self.cap_fact != 0]))
         
         m.addConstrs(((inst_cap['Owned PV', y] <= self.RE_max * M * 100)

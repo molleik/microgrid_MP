@@ -1065,7 +1065,9 @@ def re_comp(casePath, index='re', addCurrent=None):
     
     
 
-def energy_sensitivity(casePath, way_1, s_range_1, way_2=None, s_2=None):
+def energy_sensitivity(casePath, way_1, s_range_1, 
+                       way_2=None, s_2=None, 
+                       show_demand=0):
 
     assert (way_1 == 'budget' 
             or way_1 == 'i'
@@ -1287,10 +1289,10 @@ def energy_sensitivity(casePath, way_1, s_range_1, way_2=None, s_2=None):
            label = 'Charge',
            color = "#828282", width = 0.5, zorder=3)
     
-    
-    ax.plot(tot_dem * -1,
-            label = 'Net demand',
-            color = 'black', zorder=4)
+    if show_demand == 1:
+        ax.plot(tot_dem * -1,
+                label = 'Net demand',
+                color = 'black', zorder=4)
     
     
     summary_df = summary_df.sort_index()
@@ -2239,7 +2241,7 @@ rep_day(outFile_0, multi=0, year=10, day=1)
 inst_cap(outFile_0, multi=0)
 '''
 # Budget~~ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-outFile_1 = os.path.join(outFile, '1. Budget')
+outFile_1 = os.path.join(outFile, '5. Budget constrained')
 
 # Economic Analysis
 keys = [250000, 400000, 750000, 1750000]
@@ -2249,12 +2251,23 @@ colors = ["#595755", "#6d597a", "#DA4167" ,
 
 outFile_1_1 = os.path.join(outFile_1, 'Grid Search')
 summary_path_1 = os.path.join(outFile_1, 'Summary.xlsx')
-
+'''
 em_path_1 = os.path.join(outFile_1, 'Grid Search', 'Evaluation Metrics.xlsx')
+files = ["Output_12_36.xlsx", "Output_13_36.xlsx", 
+         "Output_14_36.xlsx", "Output_12_35.xlsx"]
+
+for file in files:
+    file_path = os.path.join(outFile_1, "Grid Search", "Output Files",
+                             "400000", file)
+    gen_year(file_path)
+    rep_day(file_path, 5, 0)
+    rep_day(file_path, 5, 1)
+    rep_day(file_path, 5, 2)
+    inst_cap(file_path)
 
 fit_v_price(outFile_1, search='budget', keys=keys, 
             colors = ["#6d597a", "#DA4167" , "#f2b382", "#c2deaf"])
-'''
+
 # keys = [420000]
 # fit_v_price(outFile_1, search='budget', keys=keys, 
 #             colors = ["#595755"])
@@ -2402,7 +2415,7 @@ for _, row in emFile_5.iterrows():
 # Technical Analysis
 keys = [0, 10, 25, 40, 50, 60, 75, 90, 100]
 capacity_sensitivity(outFile_5, 'pros', s_range_1=keys)
-energy_sensitivity(outFile_5, 'pros', s_range_1=keys)
+energy_sensitivity(outFile_5, 'pros', s_range_1=keys, show_demand=1)
 
 #   Find summary
 emFile_5 = pd.read_excel(os.path.join(outFile_5,
@@ -2426,7 +2439,7 @@ for _, row in emFile_5.iterrows():
 keys = [0, 10, 25, 40, 50, 60, 75, 90, 100]
 hs_constrained(outFile_5, outFile_6)
 capacity_sensitivity(outFile_6, 'pros', s_range_1=keys)
-energy_sensitivity(outFile_6, 'pros', s_range_1=keys)
+energy_sensitivity(outFile_6, 'pros', s_range_1=keys, show_demand=1)
 # re_comp(outFile_6, index='pros', addCurrent = base_casePaths)
 hs_comp_cons(outFile_5, outFile_6, index='pros', addCurrent=base_casePaths)
 ''';
