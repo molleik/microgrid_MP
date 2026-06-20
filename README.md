@@ -1,4 +1,4 @@
-# Cleaner energy microgrids under market power and limited regulation in developing countries
+# Market Power and Distributed Solar Integration in Microgrids under Limited Regulation
 
 ## Project description
 The model proposed in this repository, and its corresponding paper, are part of a project titled "From Off-grid Solar PV Systems to Microgrids in Lebanon". 
@@ -35,3 +35,6 @@ Model-1/
 ├── README.md                                    # Project documentation
 └── LICENSE                                      # License information
 </pre>
+
+## How to cite
+Bou Gebrael, E., Olleik, M., & Zwickl-Bernhard, S. (2026). Market Power and Distributed Solar Integration in Microgrids under Limited Regulation. https://arxiv.org/abs/2603.16893
