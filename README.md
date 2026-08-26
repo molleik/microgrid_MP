@@ -37,4 +37,10 @@ Model-1/
 </pre>
 
 ## How to cite
-Bou Gebrael, E., Olleik, M., & Zwickl-Bernhard, S. (2026). Market Power and Distributed Solar Integration in Microgrids under Limited Regulation. https://arxiv.org/abs/2603.16893
+Bou Gebrael E., Olleik M., Zwickl-Bernhard S., "Market power and distributed solar integration in microgrids under limited regulation",
+_Applied Energy_,
+Volume 426, Part C,
+2026,
+128703,
+ISSN 0306-2619,
+https://doi.org/10.1016/j.apenergy.2026.128703.
